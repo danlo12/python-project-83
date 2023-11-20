@@ -1,6 +1,7 @@
 PORT ?= 8000
 
 install:
+	export PATH="$HOME/.local/bin:$PATH"
 	poetry install
 
 dev:
