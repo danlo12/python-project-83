@@ -2,7 +2,6 @@ PORT ?= 8000
 
 install:
 	pip install poetry
-	poetry install
 
 dev:
 	poetry run flask --app page_analyzer:app run
