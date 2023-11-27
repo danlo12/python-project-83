@@ -8,5 +8,5 @@ dev:
 
 start:
 	export PATH=$PATH:/usr/local/python3/bin
-	pip install
+	pip install gunicorn
 	gunicorn -w 5ma -b 0.0.0.0:$(PORT) page_analyzer:app
