@@ -2,6 +2,8 @@ from flask import Flask, request, render_template, redirect, url_for, flash
 import psycopg2
 import os
 from dotenv import load_dotenv
+from datetime import datetime
+import requests
 
 app = Flask(__name__)
 load_dotenv()
@@ -50,16 +52,49 @@ def urls_id(url_id):
     cur = conn.cursor()
     cur.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
     url = cur.fetchone()
-    return render_template('urls_id.html', url=url)
+    cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
+    checks = cur.fetchall()
+    conn.close()
+    return render_template('urls_id.html', url=url,checks=checks)
 
 @app.route('/urls')
 def urls():
     conn = connect_to_db()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM urls")
+    cur.execute("""
+            SELECT urls.id, urls.name, MAX(url_checks.created_at) AS last_check_date,
+            url_checks.status_code
+            FROM urls
+            LEFT JOIN url_checks ON urls.id = url_checks.url_id
+            GROUP BY urls.id, urls.name, url_checks.status_code 
+        """)
     urls = cur.fetchall()
     conn.close()
     return render_template('urls.html', urls=urls)
+
+
+@app.route('/urls/<int:url_id>/checks', methods=['POST'])
+def create_check(url_id):
+    if request.method == 'POST':
+        try:
+        # Получаем текущее время для поля created_at
+            created_at = datetime.now()
+
+        # Создаем новую запись проверки в базе данных
+            response = requests.get(url_for('urls_id',url_id=url_id, _external=True))
+            status_code = response.status_code
+            conn = connect_to_db()
+            cur = conn.cursor()
+            cur.execute("INSERT INTO url_checks (url_id, created_at, status_code) VALUES (%s, %s, %s)", (url_id, created_at, status_code))
+            conn.commit()
+            conn.close()
+            flash('Новая проверка успешно создана', 'success')
+        except psycopg2.Error as e:
+            print("Ошибка PostgreSQL:", e)
+            flash('Ошибка при создании новой проверки', 'error')
+
+    # Перенаправляем пользователя обратно на страницу с URL'ом
+    return redirect(url_for('urls_id', url_id=url_id))
 
 if __name__ == '__main__':
     app.run(debug=True)

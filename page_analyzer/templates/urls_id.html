@@ -42,11 +42,20 @@
         <th>Дата создания</th>
       </tr>
     </thead>
-      <tbody>
-
+    <tbody>
+        {% for check in checks %}
+        <tr>
+            <td>{{ check[0] }}</td>
+            <td>{{ check[2] }}</td>
+            <td>{{ check[3] }}</td>
+            <td>{{ check[4] }}</td>
+            <td>{{ check[5] }}</td>
+            <td>{{ check[6] }}</td>
+        </tr>
+        {% endfor %}
     </tbody>
     </table>
-  </div>
+</div>
 
     </div>
   </main>
