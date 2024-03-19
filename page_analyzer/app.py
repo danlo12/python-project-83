@@ -4,11 +4,13 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = 'your_secret_key_here'
+
 
 def connect_to_db():
     try:
@@ -77,20 +79,47 @@ def urls():
 def create_check(url_id):
     if request.method == 'POST':
         try:
-        # Получаем текущее время для поля created_at
+            # Получаем текущее время для поля created_at
             created_at = datetime.now()
 
-        # Создаем новую запись проверки в базе данных
-            response = requests.get(url_for('urls_id',url_id=url_id, _external=True))
-            status_code = response.status_code
             conn = connect_to_db()
             cur = conn.cursor()
-            cur.execute("INSERT INTO url_checks (url_id, created_at, status_code) VALUES (%s, %s, %s)", (url_id, created_at, status_code))
-            conn.commit()
+            cur.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
+            url_record = cur.fetchone()
             conn.close()
-            flash('Новая проверка успешно создана', 'success')
-        except psycopg2.Error as e:
-            print("Ошибка PostgreSQL:", e)
+            if url_record:
+                url = url_record[0]
+
+            # Получаем HTML-контент страницы
+                response = requests.get(url)
+                html_content = response.text
+
+                # Парсим HTML-контент с помощью BeautifulSoup
+                soup = BeautifulSoup(html_content, 'html.parser')
+
+                # Извлекаем теги h1, title и meta с атрибутом name="description"
+                h1_tag = soup.find('h1')
+                title_tag = soup.find('title')
+                meta_description_tag = soup.find('meta', attrs={'name': 'description'})
+
+                # Извлекаем текст из тегов, если они найдены
+                h1 = h1_tag.text if h1_tag else None
+                title = title_tag.text if title_tag else None
+                description = meta_description_tag['content'] if meta_description_tag and 'content' in meta_description_tag.attrs else None
+
+                # Получаем статус-код ответа
+                status_code = response.status_code
+
+                # Создаем новую запись проверки в базе данных
+                conn = connect_to_db()
+                cur = conn.cursor()
+                cur.execute("INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)", (url_id, created_at, status_code, str(h1), str(title), str(description)))
+                conn.commit()
+                conn.close()
+
+                flash('Новая проверка успешно создана', 'success')
+        except (psycopg2.Error, requests.RequestException) as e:
+            print("Ошибка:", e)
             flash('Ошибка при создании новой проверки', 'error')
 
     # Перенаправляем пользователя обратно на страницу с URL'ом
