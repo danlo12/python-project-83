@@ -9,42 +9,57 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = 'your_secret_key_here'
 
 def connect_to_db():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    except:
+        print('Can`t establish connection to database')
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         url = request.form['url']
-        add_url_to_db(url)
+        url_id = add_url_to_db(url)
         flash('URL успешно добавлен', 'success')
-        return redirect(url_for('index'))
-    else:
-        return render_template('index.html')
+        return redirect(url_for('urls_id', url_id=url_id))
+
+    return render_template('index.html')
 
 def add_url_to_db(url):
-    conn = connect_to_db()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO urls (name) VALUES (%s)", (url,))
-    conn.commit()
-    conn.close()
-
-
-@app.route('/urls', methods=['GET', 'POST'])
-def urls():
-    if request.method == 'POST':
-        url = request.form['url']
-        add_url_to_db(url)
-        flash('URL успешно добавлен', 'success')
-        return redirect(url_for('urls'))
-    else:
+    try:
         conn = connect_to_db()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM urls ORDER BY id DESC")
-        urls = cur.fetchall()
+        cur.execute("SELECT id FROM urls WHERE name = %s", (url,))
+        existing_id = cur.fetchone()
+        if existing_id:
+            url_id = existing_id[0]
+        else:
+            cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (url,))
+            url_id = cur.fetchone()[0]
+            conn.commit()
+        return url_id
+    except psycopg2.Error as e:
+        print("Ошибка PostgreSQL:", e)
+    finally:
         conn.close()
-        return render_template('urls.html', urls=urls)
+
+@app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
+def urls_id(url_id):
+    conn = connect_to_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
+    url = cur.fetchone()
+    return render_template('urls_id.html', url=url)
+
+@app.route('/urls')
+def urls():
+    conn = connect_to_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM urls")
+    urls = cur.fetchall()
+    conn.close()
+    return render_template('urls.html', urls=urls)
 
 if __name__ == '__main__':
     app.run(debug=True)
