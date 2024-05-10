@@ -1,11 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
   {% if messages %}
-  <ul class=flashes>
   {% for category, message in messages %}
-    <li class="{{ category }}">{{ message }}</li>
+    <div class="alert alert-success" role="alert">{{ message }}</div>
   {% endfor %}
-  </ul>
         {% endif %}
 <main class="flex-grow-1">
     <div class="container-lg mt-3">
