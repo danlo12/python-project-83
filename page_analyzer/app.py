@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -57,7 +57,8 @@ def urls_id(url_id):
     cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
     checks = cur.fetchall()
     conn.close()
-    return render_template('urls_id.html', url=url,checks=checks)
+    messages = get_flashed_messages(with_categories=True)
+    return render_template('urls_id.html', url=url,checks=checks,messages=messages)
 
 @app.route('/urls')
 def urls():
@@ -72,6 +73,7 @@ def urls():
         """)
     urls = cur.fetchall()
     conn.close()
+    flash('Страница успешно добавлена', 'success')
     return render_template('urls.html', urls=urls)
 
 
