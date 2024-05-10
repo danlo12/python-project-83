@@ -5,12 +5,12 @@ from dotenv import load_dotenv
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
+from validators import url as validate_url
 
 app = Flask(__name__)
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = 'your_secret_key_here'
-
 
 def connect_to_db():
     try:
@@ -24,9 +24,12 @@ def connect_to_db():
 def index():
     if request.method == 'POST':
         url = request.form['url']
-        url_id = add_url_to_db(url)
-        flash('URL успешно добавлен', 'success')
-        return redirect(url_for('urls_id', url_id=url_id))
+        if validate_url(url):
+            url_id = add_url_to_db(url)
+            flash('Страница успешно добавлена', 'success')
+            return redirect(url_for('urls_id', url_id=url_id))
+        else:
+            flash('Некорректный URL', 'danger')
 
     return render_template('index.html')
 
@@ -119,10 +122,10 @@ def create_check(url_id):
                 conn.commit()
                 conn.close()
 
-                flash('Новая проверка успешно создана', 'success')
+                flash('Страница успешно проверена', 'success')
         except (psycopg2.Error, requests.RequestException) as e:
             print("Ошибка:", e)
-            flash('Ошибка при создании новой проверки', 'error')
+            flash('Ошибка при проверке', 'error')
 
     # Перенаправляем пользователя обратно на страницу с URL'ом
     return redirect(url_for('urls_id', url_id=url_id))
