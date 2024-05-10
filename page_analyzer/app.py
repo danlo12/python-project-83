@@ -76,7 +76,6 @@ def urls():
         """)
     urls = cur.fetchall()
     conn.close()
-    flash('Страница успешно добавлена', 'success')
     return render_template('urls.html', urls=urls)
 
 
