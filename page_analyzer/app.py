@@ -73,11 +73,11 @@ def urls():
             FROM urls
             LEFT JOIN url_checks ON urls.id = url_checks.url_id
             GROUP BY urls.id, urls.name, url_checks.status_code 
+            ORDER BY urls.id DESC 
         """)
     urls = cur.fetchall()
     conn.close()
     return render_template('urls.html', urls=urls)
-
 
 @app.route('/urls/<int:url_id>/checks', methods=['POST'])
 def create_check(url_id):

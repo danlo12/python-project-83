@@ -30,7 +30,7 @@
     </form>
 
   <div>
-    <table class="table table-bordered table-hover mt-2" data-test="checks">
+    <table class="table table-bordered table-hover mt-2">
     <thead>
       <tr>
         <th>ID</th>
@@ -43,7 +43,7 @@
     </thead>
     <tbody>
         {% for check in checks %}
-        <tr>
+        <tr  data-test="checks">
             <td>{{ check[0] }}</td>
             <td>{{ check[2] }}</td>
             <td>{{ check[3] }}</td>
