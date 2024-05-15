@@ -83,7 +83,6 @@ def urls():
 def create_check(url_id):
     if request.method == 'POST':
         try:
-            # Получаем текущее время для поля created_at
             created_at = datetime.now()
 
             conn = connect_to_db()
@@ -94,7 +93,7 @@ def create_check(url_id):
             if url_record:
                 url = url_record[0]
 
-            # Получаем HTML-контент страницы
+
                 response = requests.get(url)
                 html_content = response.text
 
