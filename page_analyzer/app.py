@@ -6,6 +6,8 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from validators import url as validate_url
+from urllib.parse import urlparse
+
 
 app = Flask(__name__)
 load_dotenv()
@@ -25,24 +27,29 @@ def index():
     if request.method == 'POST':
         url = request.form['url']
         if validate_url(url):
-            url_id = add_url_to_db(url)
-            flash('Страница успешно добавлена', 'success')
-            return redirect(url_for('urls_id', url_id=url_id))
+            if not is_url_in_db(url):  # Проверяем, есть ли URL в базе данных
+                url_id = add_url_to_db(url)
+                flash('Страница успешно добавлена', 'success')
+                return redirect(url_for('urls_id', url_id=url_id))
+            else:
+                flash('Страница уже добавлена', 'info')  # Сообщение, если URL уже есть в базе данных
+                url_id = add_url_to_db(url)
+                return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
 
     return render_template('index.html')
-
 def add_url_to_db(url):
+    base_url = get_base_url(url)
     try:
         conn = connect_to_db()
         cur = conn.cursor()
-        cur.execute("SELECT id FROM urls WHERE name = %s", (url,))
+        cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
         existing_id = cur.fetchone()
         if existing_id:
             url_id = existing_id[0]
         else:
-            cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (url,))
+            cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
             url_id = cur.fetchone()[0]
             conn.commit()
         return url_id
@@ -50,6 +57,25 @@ def add_url_to_db(url):
         print("Ошибка PostgreSQL:", e)
     finally:
         conn.close()
+
+def is_url_in_db(url):
+    try:
+        base_url = get_base_url(url)
+        conn = connect_to_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
+        existing_id = cur.fetchone()
+        return True if existing_id else False
+    except psycopg2.Error as e:
+        print("Ошибка PostgreSQL:", e)
+        return False
+    finally:
+        conn.close()
+
+def get_base_url(url):
+    parsed_url = urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    return base_url
 
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
@@ -123,7 +149,7 @@ def create_check(url_id):
                 flash('Страница успешно проверена', 'success')
         except (psycopg2.Error, requests.RequestException) as e:
             print("Ошибка:", e)
-            flash('Ошибка при проверке', 'error')
+            flash('Ошибка при проверке', 'danger')
 
     # Перенаправляем пользователя обратно на страницу с URL'ом
     return redirect(url_for('urls_id', url_id=url_id))
