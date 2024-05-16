@@ -149,7 +149,7 @@ def create_check(url_id):
                 flash('Страница успешно проверена', 'success')
         except (psycopg2.Error, requests.RequestException) as e:
             print("Ошибка:", e)
-            flash('Ошибка при проверке', 'danger')
+            flash('Произошла ошибка при проверке', 'danger')
 
     # Перенаправляем пользователя обратно на страницу с URL'ом
     return redirect(url_for('urls_id', url_id=url_id))
