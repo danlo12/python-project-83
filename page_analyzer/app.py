@@ -42,35 +42,32 @@ def index():
 def add_url_to_db(url):
     base_url = get_base_url(url)
     try:
-        conn = connect_to_db()
-        cur = conn.cursor()
-        cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
-        existing_id = cur.fetchone()
-        if existing_id:
-            url_id = existing_id[0]
-        else:
-            cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
-            url_id = cur.fetchone()[0]
-            conn.commit()
-        return url_id
+        with connect_to_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
+                existing_id = cur.fetchone()
+                if existing_id:
+                    url_id = existing_id[0]
+                else:
+                    cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
+                    url_id = cur.fetchone()[0]
+                    conn.commit()
+                return url_id
     except psycopg2.Error as e:
         print("Ошибка PostgreSQL:", e)
-    finally:
-        conn.close()
+        return None
 
 def is_url_in_db(url):
     try:
         base_url = get_base_url(url)
-        conn = connect_to_db()
-        cur = conn.cursor()
-        cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
-        existing_id = cur.fetchone()
-        return True if existing_id else False
+        with connect_to_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
+                existing_id = cur.fetchone()
+                return True if existing_id else False
     except psycopg2.Error as e:
         print("Ошибка PostgreSQL:", e)
         return False
-    finally:
-        conn.close()
 
 def get_base_url(url):
     parsed_url = urlparse(url)
