@@ -30,7 +30,7 @@ def index():
                 flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', url_id=url_id))
             else:
-                flash('Страница уже добавлена', 'info')
+                flash('Страница уже существует', 'info')
                 url_id = add_url_to_db(url)
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
