@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages , Response
+from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages , Response , make_response
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -35,8 +35,12 @@ def index():
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
+            response = make_response(render_template('urls.html'))
+            response.status_code = 422
+            return response
 
-    return render_template('urls.html')
+
+    return render_template('index.html')
 
 def add_url_to_db(url):
     base_url = get_base_url(url)
@@ -90,10 +94,6 @@ def urls_id(url_id):
 
 @app.route('/urls', methods=['GET', 'POST'])
 def urls():
-    if request.method == 'POST':
-        flash('Некорректный URL', 'danger')
-        return Response('Некорректный URL', status=422)
-
     try:
         with connect_to_db() as conn:
             with conn.cursor() as cur:
