@@ -28,14 +28,14 @@ def index():
             if not is_url_in_db(url):
                 url_id = add_url_to_db(url)
                 flash('Страница успешно добавлена', 'success')
-                return redirect(url_for('urls_id', url_id=url_id))  # Передача url_id
+                return redirect(url_for('urls_id', url_id=url_id))
             else:
                 flash('Страница уже существует', 'info')
                 url_id = add_url_to_db(url)
-                return redirect(url_for('urls_id', url_id=url_id))  # Передача url_id
+                return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
-            return redirect(url_for('urls'))  # Необходимо исправить эту строку
+            return redirect(url_for('index'))
 
     return render_template('index.html')
 
