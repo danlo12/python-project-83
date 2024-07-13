@@ -146,7 +146,7 @@ def create_check(url_id):
                 if url_record:
                     url = url_record[0]
 
-                    response = requests.get(url)
+                    response = requests.get(url, timeout=10)
                     html_content = response.text
 
                     soup = BeautifulSoup(html_content, 'html.parser')
