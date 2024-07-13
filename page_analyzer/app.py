@@ -30,8 +30,8 @@ def index():
                 flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', url_id=url_id))
             else:
-                flash('Страница уже существует', 'info')
                 url_id = add_url_to_db(url)
+                flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
@@ -78,7 +78,6 @@ def is_url_in_db(url):
     finally:
         cur.close()
         conn.close()
-
 def get_base_url(url):
     parsed_url = urlparse(url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
