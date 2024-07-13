@@ -119,6 +119,7 @@ def urls():
             ORDER BY urls.id DESC 
         """)
         urls = cur.fetchall()
+        print("URLs from database:", urls)
         return render_template('urls.html', urls=urls)
     except psycopg2.Error as e:
         print("Ошибка PostgreSQL:", e)
