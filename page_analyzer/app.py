@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages , Response , make_response
+from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages , session
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -35,6 +35,7 @@ def index():
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
+            session['index_url'] = url
             return redirect(url_for('urls'))
 
     return render_template('index.html')
@@ -106,6 +107,9 @@ def urls_id(url_id):
 @app.route('/urls', methods=['GET', 'POST'])
 def urls():
     conn = connect_to_db()
+    index_url = session.get('index_url')
+    if not validate_url(index_url):
+        return render_template('index.html', code=422)
     if conn is None:
         return redirect(url_for('index'))
     try:
