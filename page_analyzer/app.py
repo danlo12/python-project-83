@@ -25,6 +25,7 @@ def index():
     if request.method == 'POST':
         url = request.form['url']
         if validate_url(url):
+            session['validate'] = True
             if not is_url_in_db(url):
                 url_id = add_url_to_db(url)
                 flash('Страница успешно добавлена', 'success')
@@ -34,8 +35,8 @@ def index():
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
+            session['validate'] = False
             flash('Некорректный URL', 'danger')
-            session['index_url'] = url
             return redirect(url_for('urls'))
 
     return render_template('index.html')
@@ -107,8 +108,8 @@ def urls_id(url_id):
 @app.route('/urls', methods=['GET', 'POST'])
 def urls():
     conn = connect_to_db()
-    index_url = session.get('index_url')
-    if not validate_url(index_url):
+    if not session.get('validate') and session.get('validate') is not None:
+        session['validate'] = True
         return render_template('index.html', code=422)
     if conn is None:
         return redirect(url_for('index'))
