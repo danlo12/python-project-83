@@ -108,6 +108,13 @@ def urls():
     conn = connect_to_db()
     if conn is None:
         return redirect(url_for('index'))
+    if request.method == 'POST':
+        url = request.form['url']
+        if not validate_url(url):
+            flash('Некорректный URL', 'danger')
+            response = make_response(render_template('urls.html', status=422))
+            response.status_code = 422
+            return response
     try:
         cur = conn.cursor()
         cur.execute("""
