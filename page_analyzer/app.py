@@ -35,7 +35,7 @@ def index():
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
-            return render_template('urls.html',status=422)
+            return redirect(url_for('urls'))
 
     return render_template('index.html')
 
@@ -108,13 +108,6 @@ def urls():
     conn = connect_to_db()
     if conn is None:
         return redirect(url_for('index'))
-    if request.method == 'POST':
-        url = request.form['url']
-        if not validate_url(url):
-            flash('Некорректный URL', 'danger')
-            response = make_response(render_template('urls.html', status=422))
-            response.status_code = 422
-            return response
     try:
         cur = conn.cursor()
         cur.execute("""
