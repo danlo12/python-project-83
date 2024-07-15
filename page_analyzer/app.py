@@ -35,7 +35,7 @@ def index():
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
-            return render_template('index.html',status=400)
+            return render_template('urls.html',status=422)
 
     return render_template('index.html')
 
