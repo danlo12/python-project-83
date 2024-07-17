@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages , session
+from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages ,abort
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -19,13 +19,11 @@ def connect_to_db():
     except Exception as e:
         print(f"Can't establish connection to database: {e}")
         return None
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         url = request.form['url']
         if validate_url(url):
-            session['validate'] = True
             if not is_url_in_db(url):
                 url_id = add_url_to_db(url)
                 flash('Страница успешно добавлена', 'success')
@@ -35,9 +33,9 @@ def index():
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
-            session['validate'] = False
             flash('Некорректный URL', 'danger')
-            return redirect(url_for('urls'))
+            print(url)
+            return redirect(url_for('urls', index_url=url))
 
     return render_template('index.html')
 
@@ -107,13 +105,14 @@ def urls_id(url_id):
 
 @app.route('/urls', methods=['GET', 'POST'])
 def urls():
+    index_url = request.args.get('index_url', 'https://www.google.com/')
+    print(index_url)
     conn = connect_to_db()
-    if not session.get('validate') and session.get('validate') is not None:
-        session['validate'] = True
+    if not validate_url(index_url):
         return render_template('index.html', code=422)
     if conn is None:
         return redirect(url_for('index'))
-    try:
+    try:    
         cur = conn.cursor()
         cur.execute("""
             SELECT urls.id, urls.name, MAX(url_checks.created_at) AS last_check_date,
