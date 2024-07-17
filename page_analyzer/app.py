@@ -33,8 +33,6 @@ def index():
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
-            flash('Некорректный URL', 'danger')
-            print(url)
             return redirect(url_for('urls', index_url=url))
 
     return render_template('index.html')
@@ -109,6 +107,7 @@ def urls():
     print(index_url)
     conn = connect_to_db()
     if not validate_url(index_url):
+        flash('Некорректный URL', 'danger')
         return render_template('index.html', code=422)
     if conn is None:
         return redirect(url_for('index'))
