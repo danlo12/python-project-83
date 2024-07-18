@@ -209,7 +209,7 @@ def create_check(url_id):
                             flash('Страница успешно проверена', 'success')
                         except requests.RequestException as e:
                             print("Ошибка при запросе к URL:", e)
-                            flash('Произошла ошибка при запросе к URL', 'danger')
+                            flash('Произошла ошибка при проверке', 'danger')
                     else:
                         flash('URL не найден', 'warning')
                 except psycopg2.Error as e:
