@@ -187,6 +187,7 @@ def create_check(url_id):
 
                         try:
                             response = requests.get(url, timeout=10)
+                            response.raise_for_status()
                             html_content = response.text
 
                             soup = BeautifulSoup(html_content, 'html.parser')
@@ -209,9 +210,6 @@ def create_check(url_id):
                             flash('Страница успешно проверена', 'success')
                         except requests.RequestException as e:
                             print("Ошибка при запросе к URL:", e)
-                            flash('Произошла ошибка при проверке', 'danger')
-                            flash('Произошла ошибка при проверке', 'danger')
-                            flash('Произошла ошибка при проверке', 'danger')
                             flash('Произошла ошибка при проверке', 'danger')
                     else:
                         flash('URL не найден', 'warning')
