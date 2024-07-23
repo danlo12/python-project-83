@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages ,abort
+from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages, make_response
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -102,10 +102,13 @@ def get_base_url(url):
 
 @app.route('/urls', methods=['GET', 'POST'])
 def urls():
-    index_url = request.args.get('index_url', 'https://www.google.com/')
-    if not validate_url(index_url):
+    index_url = request.args.get('index_url', None)
+    if not validate_url(index_url) and index_url is not None:
         flash('Некорректный URL', 'danger')
-        return render_template('index.html', code=422)
+        html_content = render_template('index.html')
+        response = make_response(html_content)
+        response.status_code = 422
+        return response
 
     try:
         with connect_to_db() as conn:
