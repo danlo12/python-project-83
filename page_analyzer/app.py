@@ -210,6 +210,9 @@ def create_check(url_id):
                         except requests.RequestException as e:
                             print("Ошибка при запросе к URL:", e)
                             flash('Произошла ошибка при проверке', 'danger')
+                            flash('Произошла ошибка при проверке', 'danger')
+                            flash('Произошла ошибка при проверке', 'danger')
+                            flash('Произошла ошибка при проверке', 'danger')
                     else:
                         flash('URL не найден', 'warning')
                 except psycopg2.Error as e:
