@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages, make_response
+from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages, make_response, session
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -42,7 +42,8 @@ def index():
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
-            return redirect(url_for('urls', index_url=url))
+            session['invalid_url'] = url
+            return redirect(url_for('urls'))
 
     return render_template('index.html')
 
@@ -102,14 +103,13 @@ def get_base_url(url):
 
 @app.route('/urls', methods=['GET', 'POST'])
 def urls():
-    index_url = request.args.get('index_url', None)
-    if not validate_url(index_url) and index_url is not None:
+    index_url = session.pop('invalid_url', None)
+    if index_url and not validate_url(index_url):
         flash('Некорректный URL', 'danger')
         html_content = render_template('index.html')
         response = make_response(html_content)
         response.status_code = 422
         return response
-
     try:
         with connect_to_db() as conn:
             if conn is None:
@@ -138,7 +138,6 @@ def urls():
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
         return redirect(url_for('index'))
-
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
     try:
