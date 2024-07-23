@@ -14,6 +14,7 @@ load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 
+
 @contextmanager
 def connect_to_db():
     conn = None
@@ -96,10 +97,13 @@ def is_url_in_db(url):
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         return False
+
+
 def get_base_url(url):
     parsed_url = urlparse(url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
     return base_url
+
 
 @app.route('/urls', methods=['GET', 'POST'])
 def urls():
@@ -123,8 +127,8 @@ def urls():
                     url_checks.status_code
                     FROM urls
                     LEFT JOIN url_checks ON urls.id = url_checks.url_id
-                    GROUP BY urls.id, urls.name, url_checks.status_code 
-                    ORDER BY urls.id DESC 
+                    GROUP BY urls.id, urls.name, url_checks.status_code
+                    ORDER BY urls.id DESC
                 """)
                 urls = cur.fetchall()
                 return render_template('urls.html', urls=urls)
@@ -138,6 +142,8 @@ def urls():
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
         return redirect(url_for('index'))
+
+
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
     try:
@@ -168,6 +174,7 @@ def urls_id(url_id):
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
         return redirect(url_for('index'))
+
 
 @app.route('/urls/<int:url_id>/checks', methods=['POST'])
 def create_check(url_id):
@@ -225,6 +232,7 @@ def create_check(url_id):
             flash('Произошла ошибка при подключении к базе данных', 'danger')
 
     return redirect(url_for('urls_id', url_id=url_id))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
