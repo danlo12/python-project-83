@@ -214,7 +214,7 @@ def create_check(url_id):
                         flash('URL не найден', 'warning')
                 except psycopg2.Error as e:
                     print("Ошибка PostgreSQL:", e)
-                    flash('Произошла ошибка при выполнении запроса', 'danger')
+                    flash('Произошла ошибка при проверке', 'danger')
                 finally:
                     cur.close()
         except Exception as e:
