@@ -1,12 +1,14 @@
+from flask import Flask
 import psycopg2
 import os
 from urllib.parse import urlparse
 from contextlib import contextmanager
 from dotenv import load_dotenv
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+app = Flask(__name__)
 load_dotenv()
-
+DATABASE_URL = os.getenv('DATABASE_URL')
+app.secret_key = os.getenv('SECRET_KEY')
 
 def get_base_url(url):
     parsed_url = urlparse(url)
