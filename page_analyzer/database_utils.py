@@ -1,10 +1,10 @@
-from flask import Flask
 import psycopg2
 import os
 from urllib.parse import urlparse
 from contextlib import contextmanager
 
 DATABASE_URL = os.getenv('DATABASE_URL')
+
 
 @contextmanager
 def connect_to_db():
