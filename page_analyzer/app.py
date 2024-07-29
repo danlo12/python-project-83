@@ -6,7 +6,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from validators import url as validate_url
-from .database_utils import connect_to_db, add_url_to_db, is_url_in_db
+from page_analyzer.database_utils import connect_to_db, add_url_to_db, is_url_in_db
 
 app = Flask(__name__)
 load_dotenv()
