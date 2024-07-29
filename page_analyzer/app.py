@@ -6,12 +6,49 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from validators import url as validate_url
-from .database_utils import connect_to_db, add_url_to_db, is_url_in_db
+from .database_utils import connect_to_db, is_url_in_db
+import psycopg2
+import os
+from urllib.parse import urlparse
+from contextlib import contextmanager
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
+
+def get_base_url(url):
+    parsed_url = urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    return base_url
+
+def add_url_to_db(url):
+    base_url = get_base_url(url)
+    try:
+        with connect_to_db() as conn:
+            if conn is None:
+                return None
+
+            try:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
+                existing_id = cur.fetchone()
+                if existing_id:
+                    url_id = existing_id[0]
+                else:
+                    cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
+                    url_id = cur.fetchone()[0]
+                    conn.commit()
+                return url_id
+            except psycopg2.Error as e:
+                print("Ошибка PostgreSQL:", e)
+                return None
+            finally:
+                cur.close()
+    except Exception as e:
+        print(f"Ошибка при подключении к базе данных: {e}")
+        return None
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -21,12 +58,10 @@ def index():
         if validate_url(url):
             if not is_url_in_db(url):
                 url_id = add_url_to_db(url)
-                print(url_id,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', url_id=url_id))
             else:
                 url_id = add_url_to_db(url)
-                print(url_id, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
