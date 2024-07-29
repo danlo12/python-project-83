@@ -13,6 +13,7 @@ load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
