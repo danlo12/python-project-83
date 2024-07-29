@@ -1,11 +1,5 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages, make_response, session
 import psycopg2
 import os
-from dotenv import load_dotenv
-from datetime import datetime
-import requests
-from bs4 import BeautifulSoup
-from validators import url as validate_url
 from urllib.parse import urlparse
 from contextlib import contextmanager
 
