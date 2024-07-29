@@ -6,7 +6,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from validators import url as validate_url
-from .database_utils import connect_to_db, is_url_in_db
+from .database_utils import connect_to_db, is_url_in_db,add_url_to_db
 import psycopg2
 import os
 from urllib.parse import urlparse
@@ -23,33 +23,26 @@ def get_base_url(url):
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
     return base_url
 
-def add_url_to_db(url):
+def is_url_in_db(url):
     base_url = get_base_url(url)
     try:
         with connect_to_db() as conn:
             if conn is None:
-                return None
+                return False
 
             try:
                 cur = conn.cursor()
                 cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
                 existing_id = cur.fetchone()
-                if existing_id:
-                    url_id = existing_id[0]
-                else:
-                    cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
-                    url_id = cur.fetchone()[0]
-                    conn.commit()
-                return url_id
+                return existing_id is not None
             except psycopg2.Error as e:
                 print("Ошибка PostgreSQL:", e)
-                return None
+                return False
             finally:
                 cur.close()
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
-        return None
-
+        return False
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
