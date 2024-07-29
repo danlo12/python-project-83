@@ -2,8 +2,16 @@ import psycopg2
 import os
 from urllib.parse import urlparse
 from contextlib import contextmanager
+from dotenv import load_dotenv
 
 DATABASE_URL = os.getenv('DATABASE_URL')
+load_dotenv()
+
+
+def get_base_url(url):
+    parsed_url = urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    return base_url
 
 
 @contextmanager
@@ -68,9 +76,3 @@ def is_url_in_db(url):
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         return False
-
-
-def get_base_url(url):
-    parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    return base_url

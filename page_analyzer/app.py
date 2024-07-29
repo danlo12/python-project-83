@@ -6,7 +6,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from validators import url as validate_url
-from page_analyzer import database_utils
+from .database_utils import connect_to_db, add_url_to_db, is_url_in_db
 
 app = Flask(__name__)
 load_dotenv()
@@ -19,12 +19,14 @@ def index():
     if request.method == 'POST':
         url = request.form['url']
         if validate_url(url):
-            if not database_utils.is_url_in_db(url):
-                url_id = database_utils.add_url_to_db(url)
+            if not is_url_in_db(url):
+                url_id = add_url_to_db(url)
+                print(url_id,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', url_id=url_id))
             else:
-                url_id = database_utils.add_url_to_db(url)
+                url_id = add_url_to_db(url)
+                print(url_id, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
@@ -44,7 +46,7 @@ def urls():
         response.status_code = 422
         return response
     try:
-        with database_utils.connect_to_db() as conn:
+        with connect_to_db() as conn:
             if conn is None:
                 flash('Произошла ошибка при подключении к базе данных', 'danger')
                 return redirect(url_for('index'))
@@ -76,7 +78,7 @@ def urls():
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
     try:
-        with database_utils.connect_to_db() as conn:
+        with connect_to_db() as conn:
             if conn is None:
                 flash('Произошла ошибка при подключении к базе данных', 'danger')
                 return redirect(url_for('index'))
@@ -111,7 +113,7 @@ def create_check(url_id):
         created_at = datetime.now()
 
         try:
-            with database_utils.connect_to_db() as conn:
+            with connect_to_db() as conn:
                 if conn is None:
                     flash('Произошла ошибка при подключении к базе данных', 'danger')
                     return redirect(url_for('urls_id', url_id=url_id))
