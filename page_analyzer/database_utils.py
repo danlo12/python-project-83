@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 from contextlib import contextmanager
 from dotenv import load_dotenv
 from validators import url as validate_url
-from datetime import datetime
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)

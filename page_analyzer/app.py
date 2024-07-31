@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, get_flashed_messages, make_response, session
+from flask import Flask, request, render_template, redirect, url_for, flash, make_response, session
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
