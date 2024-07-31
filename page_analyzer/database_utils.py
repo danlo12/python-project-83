@@ -1,9 +1,13 @@
-from flask import Flask
+from flask import Flask, redirect, url_for, flash, session, render_template, get_flashed_messages
+import requests
 import psycopg2
 import os
 from urllib.parse import urlparse
 from contextlib import contextmanager
 from dotenv import load_dotenv
+from validators import url as validate_url
+from datetime import datetime
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 load_dotenv()
@@ -19,16 +23,30 @@ def get_base_url(url):
 
 @contextmanager
 def connect_to_db():
-    conn = None
+    conn = psycopg2.connect(DATABASE_URL)
     try:
-        conn = psycopg2.connect(DATABASE_URL)
         yield conn
-    except Exception as e:
-        print(f"Can't establish connection to database: {e}")
-        yield None
     finally:
-        if conn:
-            conn.close()
+        conn.close()
+
+
+def get_or_create_url_id(conn, base_url):
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
+        existing_id = cur.fetchone()
+        if existing_id:
+            return existing_id[0]
+        else:
+            cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
+            url_id = cur.fetchone()[0]
+            conn.commit()
+            return url_id
+    except psycopg2.Error as e:
+        print("Ошибка PostgreSQL:", e)
+        return None
+    finally:
+        cur.close()
 
 
 def add_url_to_db(url):
@@ -37,23 +55,7 @@ def add_url_to_db(url):
         with connect_to_db() as conn:
             if conn is None:
                 return None
-
-            try:
-                cur = conn.cursor()
-                cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
-                existing_id = cur.fetchone()
-                if existing_id:
-                    url_id = existing_id[0]
-                else:
-                    cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
-                    url_id = cur.fetchone()[0]
-                    conn.commit()
-                return url_id
-            except psycopg2.Error as e:
-                print("Ошибка PostgreSQL:", e)
-                return None
-            finally:
-                cur.close()
+            return get_or_create_url_id(conn, base_url)
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         return None
@@ -61,21 +63,124 @@ def add_url_to_db(url):
 
 def is_url_in_db(url):
     base_url = get_base_url(url)
-    try:
-        with connect_to_db() as conn:
-            if conn is None:
-                return False
+    with connect_to_db() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
+        existing_id = cur.fetchone()
+        return existing_id is not None
 
-            try:
-                cur = conn.cursor()
-                cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
-                existing_id = cur.fetchone()
-                return existing_id is not None
-            except psycopg2.Error as e:
-                print("Ошибка PostgreSQL:", e)
-                return False
-            finally:
-                cur.close()
-    except Exception as e:
-        print(f"Ошибка при подключении к базе данных: {e}")
-        return False
+
+def process_url(url):
+    if validate_url(url):
+        if not is_url_in_db(url):
+            url_id = add_url_to_db(url)
+            flash('Страница успешно добавлена', 'success')
+            return redirect(url_for('urls_id', url_id=url_id))
+        else:
+            url_id = add_url_to_db(url)
+            flash('Страница уже существует', 'info')
+            return redirect(url_for('urls_id', url_id=url_id))
+    else:
+        session['invalid_url'] = url
+        return redirect(url_for('urls'))
+
+
+def get_urls_with_last_check():
+    with connect_to_db() as conn:
+        if conn is None:
+            flash('Произошла ошибка при подключении к базе данных', 'danger')
+            return redirect(url_for('index'))
+
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                    SELECT urls.id, urls.name, MAX(url_checks.created_at) AS last_check_date,
+                    url_checks.status_code
+                    FROM urls
+                    LEFT JOIN url_checks ON urls.id = url_checks.url_id
+                    GROUP BY urls.id, urls.name, url_checks.status_code
+                    ORDER BY urls.id DESC
+                """)
+            urls = cur.fetchall()
+            return render_template('urls.html', urls=urls)
+        except psycopg2.Error as e:
+            print("Ошибка PostgreSQL:", e)
+            flash('Произошла ошибка при выполнении запроса', 'danger')
+            return redirect(url_for('index'))
+        finally:
+            cur.close()
+
+
+def get_url_details(url_id):
+    with connect_to_db() as conn:
+        if conn is None:
+            flash('Произошла ошибка при подключении к базе данных', 'danger')
+            return redirect(url_for('index'))
+
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
+            url = cur.fetchone()
+            if url is None:
+                flash('URL не найден', 'warning')
+                return redirect(url_for('index'))
+
+            cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
+            checks = cur.fetchall()
+            messages = get_flashed_messages(with_categories=True)
+            return render_template('urls_id.html', url=url, checks=checks, messages=messages)
+        except psycopg2.Error as e:
+            print("Ошибка PostgreSQL:", e)
+            flash('Произошла ошибка при выполнении запроса', 'danger')
+            return redirect(url_for('index'))
+        finally:
+            cur.close()
+
+
+def check_url_status_and_store(url_id, created_at):
+    with connect_to_db() as conn:
+        if conn is None:
+            flash('Произошла ошибка при подключении к базе данных', 'danger')
+            return redirect(url_for('urls_id', url_id=url_id))
+
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
+            url_record = cur.fetchone()
+            if url_record:
+                url = url_record[0]
+
+                try:
+                    response = requests.get(url, timeout=10)
+                    response.raise_for_status()
+                    html_content = response.text
+
+                    soup = BeautifulSoup(html_content, 'html.parser')
+
+                    h1_tag = soup.find('h1')
+                    title_tag = soup.find('title')
+                    meta_description_tag = soup.find('meta', attrs={'name': 'description'})
+
+                    h1 = h1_tag.text if h1_tag else None
+                    title = title_tag.text if title_tag else None
+                    description = meta_description_tag[
+                        'content'] if meta_description_tag and 'content' in meta_description_tag.attrs else None
+
+                    status_code = response.status_code
+
+                    cur.execute(
+                        "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (url_id, created_at, status_code, str(h1), str(title), str(description))
+                    )
+                    conn.commit()
+                    flash('Страница успешно проверена', 'success')
+                except requests.RequestException as e:
+                    print("Ошибка при запросе к URL:", e)
+                    flash('Произошла ошибка при проверке', 'danger')
+            else:
+                flash('URL не найден', 'warning')
+        except psycopg2.Error as e:
+            print("Ошибка PostgreSQL:", e)
+            flash('Произошла ошибка при проверке', 'danger')
+        finally:
+            cur.close()

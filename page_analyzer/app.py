@@ -3,7 +3,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from validators import url as validate_url
-from .database_utils import is_url_in_db, connect_to_db, add_url_to_db
+from .database_utils import connect_to_db, process_url, get_urls_with_last_check, get_url_details
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -18,23 +18,16 @@ app.secret_key = os.getenv('SECRET_KEY')
 def index():
     if request.method == 'POST':
         url = request.form['url']
-        if validate_url(url):
-            if not is_url_in_db(url):
-                url_id = add_url_to_db(url)
-                flash('Страница успешно добавлена', 'success')
-                return redirect(url_for('urls_id', url_id=url_id))
-            else:
-                url_id = add_url_to_db(url)
-                flash('Страница уже существует', 'info')
-                return redirect(url_for('urls_id', url_id=url_id))
-        else:
-            session['invalid_url'] = url
-            return redirect(url_for('urls'))
-
+        try:
+            return process_url(url)
+        except Exception as e:
+            print(f"Ошибка при обработке URL: {e}")
+            flash('Произошла ошибка при обработке URL', 'danger')
+            return redirect(url_for('index'))
     return render_template('index.html')
 
 
-@app.route('/urls', methods=['GET', 'POST'])
+@app.route('/urls', methods=['GET'])
 def urls():
     index_url = session.pop('invalid_url', None)
     if index_url and not validate_url(index_url):
@@ -44,29 +37,7 @@ def urls():
         response.status_code = 422
         return response
     try:
-        with connect_to_db() as conn:
-            if conn is None:
-                flash('Произошла ошибка при подключении к базе данных', 'danger')
-                return redirect(url_for('index'))
-
-            try:
-                cur = conn.cursor()
-                cur.execute("""
-                    SELECT urls.id, urls.name, MAX(url_checks.created_at) AS last_check_date,
-                    url_checks.status_code
-                    FROM urls
-                    LEFT JOIN url_checks ON urls.id = url_checks.url_id
-                    GROUP BY urls.id, urls.name, url_checks.status_code
-                    ORDER BY urls.id DESC
-                """)
-                urls = cur.fetchall()
-                return render_template('urls.html', urls=urls)
-            except psycopg2.Error as e:
-                print("Ошибка PostgreSQL:", e)
-                flash('Произошла ошибка при выполнении запроса', 'danger')
-                return redirect(url_for('index'))
-            finally:
-                cur.close()
+        return get_urls_with_last_check()
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
@@ -76,29 +47,7 @@ def urls():
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
     try:
-        with connect_to_db() as conn:
-            if conn is None:
-                flash('Произошла ошибка при подключении к базе данных', 'danger')
-                return redirect(url_for('index'))
-
-            try:
-                cur = conn.cursor()
-                cur.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
-                url = cur.fetchone()
-                if url is None:
-                    flash('URL не найден', 'warning')
-                    return redirect(url_for('index'))
-
-                cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
-                checks = cur.fetchall()
-                messages = get_flashed_messages(with_categories=True)
-                return render_template('urls_id.html', url=url, checks=checks, messages=messages)
-            except psycopg2.Error as e:
-                print("Ошибка PostgreSQL:", e)
-                flash('Произошла ошибка при выполнении запроса', 'danger')
-                return redirect(url_for('index'))
-            finally:
-                cur.close()
+        return get_url_details(url_id)
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
@@ -109,7 +58,6 @@ def urls_id(url_id):
 def create_check(url_id):
     if request.method == 'POST':
         created_at = datetime.now()
-
         try:
             with connect_to_db() as conn:
                 if conn is None:
