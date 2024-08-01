@@ -69,21 +69,6 @@ def is_url_in_db(url):
         return existing_id is not None
 
 
-def process_url(url):
-    if validate_url(url):
-        if not is_url_in_db(url):
-            url_id = add_url_to_db(url)
-            flash('Страница успешно добавлена', 'success')
-            return redirect(url_for('urls_id', url_id=url_id))
-        else:
-            url_id = add_url_to_db(url)
-            flash('Страница уже существует', 'info')
-            return redirect(url_for('urls_id', url_id=url_id))
-    else:
-        session['invalid_url'] = url
-        return redirect(url_for('urls'))
-
-
 def get_urls_with_last_check():
     with connect_to_db() as conn:
         if conn is None:

@@ -3,7 +3,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from validators import url as validate_url
-from .database_utils import connect_to_db, process_url, get_urls_with_last_check, get_url_details
+from .database_utils import connect_to_db, add_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -13,9 +13,28 @@ load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 
+def process_url(url):
+    if validate_url(url):
+        if not is_url_in_db(url):
+            url_id = add_url_to_db(url)
+            flash('Страница успешно добавлена', 'success')
+            return redirect(url_for('urls_id', url_id=url_id))
+        else:
+            url_id = add_url_to_db(url)
+            flash('Страница уже существует', 'info')
+            return redirect(url_for('urls_id', url_id=url_id))
+    else:
+        session['invalid_url'] = url
+        return redirect(url_for('urls'))
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
+    if request.method == 'GET':
+        return render_template('index.html')
+
+
+@app.route('/', methods=['POST'])
+def index_post():
     if request.method == 'POST':
         url = request.form['url']
         try:
@@ -24,8 +43,6 @@ def index():
             print(f"Ошибка при обработке URL: {e}")
             flash('Произошла ошибка при обработке URL', 'danger')
             return redirect(url_for('index'))
-    return render_template('index.html')
-
 
 @app.route('/urls', methods=['GET'])
 def urls():
