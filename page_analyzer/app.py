@@ -57,7 +57,8 @@ def urls():
         response.status_code = 422
         return response
     try:
-        return get_urls_with_last_check()
+        urls_data = get_urls_with_last_check()
+        return render_template('urls.html', urls=urls_data)
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
@@ -67,7 +68,8 @@ def urls():
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
     try:
-        return get_url_details(url_id)
+        url, checks, messages = get_url_details(url_id)
+        return render_template('urls_id.html', url=url, checks=checks, messages=messages)
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')

@@ -72,8 +72,7 @@ def get_urls_with_last_check():
     with connect_to_db() as conn:
         if conn is None:
             flash('Произошла ошибка при подключении к базе данных', 'danger')
-            return redirect(url_for('index'))
-
+            raise Exception("Ошибка при подключении к базе данных")
         try:
             cur = conn.cursor()
             cur.execute("""
@@ -85,11 +84,11 @@ def get_urls_with_last_check():
                     ORDER BY urls.id DESC
                 """)
             urls = cur.fetchall()
-            return render_template('urls.html', urls=urls)
+            return urls
         except psycopg2.Error as e:
             print("Ошибка PostgreSQL:", e)
             flash('Произошла ошибка при выполнении запроса', 'danger')
-            return redirect(url_for('index'))
+            raise Exception("Ошибка при выполнении запроса")
         finally:
             cur.close()
 
@@ -98,7 +97,7 @@ def get_url_details(url_id):
     with connect_to_db() as conn:
         if conn is None:
             flash('Произошла ошибка при подключении к базе данных', 'danger')
-            return redirect(url_for('index'))
+            raise Exception("Ошибка при подключении к базе данных")
 
         try:
             cur = conn.cursor()
@@ -106,16 +105,16 @@ def get_url_details(url_id):
             url = cur.fetchone()
             if url is None:
                 flash('URL не найден', 'warning')
-                return redirect(url_for('index'))
+                raise Exception("URL не найден")
 
             cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
             checks = cur.fetchall()
             messages = get_flashed_messages(with_categories=True)
-            return render_template('urls_id.html', url=url, checks=checks, messages=messages)
+            return url, checks, messages
         except psycopg2.Error as e:
             print("Ошибка PostgreSQL:", e)
             flash('Произошла ошибка при выполнении запроса', 'danger')
-            return redirect(url_for('index'))
+            raise Exception("Произошла ошибка при выполнении запроса")
         finally:
             cur.close()
 
