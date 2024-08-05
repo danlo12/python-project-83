@@ -1,11 +1,11 @@
-from flask import Flask, redirect, url_for, flash, get_flashed_messages
-import requests
+from flask import Flask, flash, get_flashed_messages
 import psycopg2
 import os
 from urllib.parse import urlparse
 from contextlib import contextmanager
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+import requests
 
 app = Flask(__name__)
 load_dotenv()
@@ -115,5 +115,54 @@ def get_url_details(url_id):
             print("Ошибка PostgreSQL:", e)
             flash('Произошла ошибка при выполнении запроса', 'danger')
             raise Exception("Произошла ошибка при выполнении запроса")
+        finally:
+            cur.close()
+
+
+def perform_url_check_and_save_to_db(url_id, created_at):
+    with connect_to_db() as conn:
+        if conn is None:
+            flash('Произошла ошибка при подключении к базе данных', 'danger')
+            raise Exception("Произошла ошибка при подключении к базе данных")
+
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
+            url_record = cur.fetchone()
+            if url_record:
+                url = url_record[0]
+
+                try:
+                    response = requests.get(url, timeout=10)
+                    response.raise_for_status()
+                    html_content = response.text
+
+                    soup = BeautifulSoup(html_content, 'html.parser')
+
+                    h1_tag = soup.find('h1')
+                    title_tag = soup.find('title')
+                    meta_description_tag = soup.find('meta', attrs={'name': 'description'})
+
+                    h1 = h1_tag.text if h1_tag else None
+                    title = title_tag.text if title_tag else None
+                    description = meta_description_tag[
+                        'content'] if meta_description_tag and 'content' in meta_description_tag.attrs else None
+
+                    status_code = response.status_code
+
+                    cur.execute(
+                        "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (url_id, created_at, status_code, str(h1), str(title), str(description))
+                    )
+                    conn.commit()
+                    flash('Страница успешно проверена', 'success')
+                except requests.RequestException as e:
+                    print("Ошибка при запросе к URL:", e)
+                    flash('Произошла ошибка при проверке', 'danger')
+            else:
+                flash('URL не найден', 'warning')
+        except psycopg2.Error as e:
+            print("Ошибка PostgreSQL:", e)
+            flash('Произошла ошибка при проверке', 'danger')
         finally:
             cur.close()
