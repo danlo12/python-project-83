@@ -13,6 +13,7 @@ load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 
+
 def process_url(url):
     if validate_url(url):
         if not is_url_in_db(url):
@@ -26,6 +27,7 @@ def process_url(url):
     else:
         session['invalid_url'] = url
         return redirect(url_for('urls'))
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -43,6 +45,7 @@ def index_post():
             print(f"Ошибка при обработке URL: {e}")
             flash('Произошла ошибка при обработке URL', 'danger')
             return redirect(url_for('index'))
+
 
 @app.route('/urls', methods=['GET'])
 def urls():
