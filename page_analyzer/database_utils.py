@@ -1,11 +1,10 @@
-from flask import Flask, redirect, url_for, flash, session, render_template, get_flashed_messages
+from flask import Flask, redirect, url_for, flash, render_template, get_flashed_messages
 import requests
 import psycopg2
 import os
 from urllib.parse import urlparse
 from contextlib import contextmanager
 from dotenv import load_dotenv
-from validators import url as validate_url
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
@@ -73,7 +72,7 @@ def get_urls_with_last_check():
     with connect_to_db() as conn:
         if conn is None:
             flash('Произошла ошибка при подключении к базе данных', 'danger')
-            return redirect(url_for('index'))
+            return None
 
         try:
             cur = conn.cursor()
@@ -90,7 +89,7 @@ def get_urls_with_last_check():
         except psycopg2.Error as e:
             print("Ошибка PostgreSQL:", e)
             flash('Произошла ошибка при выполнении запроса', 'danger')
-            return redirect(url_for('index'))
+            return None
         finally:
             cur.close()
 
@@ -99,7 +98,7 @@ def get_url_details(url_id):
     with connect_to_db() as conn:
         if conn is None:
             flash('Произошла ошибка при подключении к базе данных', 'danger')
-            return redirect(url_for('index'))
+            return False
 
         try:
             cur = conn.cursor()
@@ -107,16 +106,16 @@ def get_url_details(url_id):
             url = cur.fetchone()
             if url is None:
                 flash('URL не найден', 'warning')
-                return redirect(url_for('index'))
+                return False
 
             cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
             checks = cur.fetchall()
             messages = get_flashed_messages(with_categories=True)
-            return render_template('urls_id.html', url=url, checks=checks, messages=messages)
+            return (url, checks, messages)
         except psycopg2.Error as e:
             print("Ошибка PostgreSQL:", e)
             flash('Произошла ошибка при выполнении запроса', 'danger')
-            return redirect(url_for('index'))
+            return False
         finally:
             cur.close()
 
