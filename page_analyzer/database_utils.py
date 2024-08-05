@@ -72,7 +72,7 @@ def get_urls_with_last_check():
     with connect_to_db() as conn:
         if conn is None:
             flash('Произошла ошибка при подключении к базе данных', 'danger')
-            return None
+            return redirect(url_for('index'))
 
         try:
             cur = conn.cursor()
@@ -89,7 +89,7 @@ def get_urls_with_last_check():
         except psycopg2.Error as e:
             print("Ошибка PostgreSQL:", e)
             flash('Произошла ошибка при выполнении запроса', 'danger')
-            return None
+            return redirect(url_for('index'))
         finally:
             cur.close()
 
@@ -98,7 +98,7 @@ def get_url_details(url_id):
     with connect_to_db() as conn:
         if conn is None:
             flash('Произошла ошибка при подключении к базе данных', 'danger')
-            return False
+            return redirect(url_for('index'))
 
         try:
             cur = conn.cursor()
@@ -106,16 +106,16 @@ def get_url_details(url_id):
             url = cur.fetchone()
             if url is None:
                 flash('URL не найден', 'warning')
-                return False
+                return redirect(url_for('index'))
 
             cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
             checks = cur.fetchall()
             messages = get_flashed_messages(with_categories=True)
-            return (url, checks, messages)
+            return render_template('urls_id.html', url=url, checks=checks, messages=messages)
         except psycopg2.Error as e:
             print("Ошибка PostgreSQL:", e)
             flash('Произошла ошибка при выполнении запроса', 'danger')
-            return False
+            return redirect(url_for('index'))
         finally:
             cur.close()
 

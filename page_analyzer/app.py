@@ -13,7 +13,6 @@ load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 
-
 def process_url(url):
     if validate_url(url):
         if not is_url_in_db(url):
@@ -27,7 +26,6 @@ def process_url(url):
     else:
         session['invalid_url'] = url
         return redirect(url_for('urls'))
-
 
 @app.route('/', methods=['GET'])
 def index():
@@ -46,7 +44,6 @@ def index_post():
             flash('Произошла ошибка при обработке URL', 'danger')
             return redirect(url_for('index'))
 
-
 @app.route('/urls', methods=['GET'])
 def urls():
     index_url = session.pop('invalid_url', None)
@@ -57,11 +54,7 @@ def urls():
         response.status_code = 422
         return response
     try:
-        result = get_urls_with_last_check()
-        if result is None:
-            return redirect(url_for('index'))
-        else:
-            return result
+        return get_urls_with_last_check()
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
@@ -71,14 +64,7 @@ def urls():
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
     try:
-        result = get_url_details(url_id)
-        if result is False:
-            return redirect(url_for('index'))
-        else:
-            url = result[1]
-            checks = result[2]
-            messages = result[3]
-            return render_template('urls_id.html', url=url, checks=checks, messages=messages)
+        return get_url_details(url_id)
     except Exception as e:
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
