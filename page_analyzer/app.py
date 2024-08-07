@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, make_response, session
+from flask import Flask, request, render_template, redirect, url_for, flash, make_response
 from datetime import datetime
 from validators import url as validate_url
 from .database_utils import add_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
