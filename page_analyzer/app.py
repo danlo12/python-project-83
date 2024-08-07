@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, make_response
+from flask import Flask, request, render_template, redirect, url_for, flash, make_response, g
 from datetime import datetime
 from validators import url as validate_url
 from .database_utils import add_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
@@ -22,7 +22,7 @@ def process_url(url):
             flash('Страница уже существует', 'info')
             return redirect(url_for('urls_id', url_id=url_id))
     else:
-        return redirect(url_for('urls',status=True))
+        return redirect(url_for('urls', error=True))
 
 
 @app.route('/', methods=['GET'])
@@ -43,13 +43,10 @@ def index_post():
             return redirect(url_for('index'))
 
 
-
-
 @app.route('/urls', methods=['GET'])
 def urls():
-    status = request.args.get('status', 'False').lower() == 'true'
-    print(status)
-    if status:
+    error = request.args.get('error')
+    if error:
         flash('Некорректный URL', 'danger')
         html_content = render_template('index.html')
         response = make_response(html_content)
