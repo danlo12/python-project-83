@@ -22,12 +22,7 @@ def process_url(url):
             flash('Страница уже существует', 'info')
             return redirect(url_for('urls_id', url_id=url_id))
     else:
-        flash('Некорректный URL', 'danger')
-        html_content = render_template('index.html')
-        response = make_response(html_content)
-        response.status_code = 422
-        return response
-        #return redirect(url_for('urls'))
+        return redirect(url_for('urls',status=True))
 
 
 @app.route('/', methods=['GET'])
@@ -52,6 +47,14 @@ def index_post():
 
 @app.route('/urls', methods=['GET'])
 def urls():
+    status = request.args.get('status', 'False').lower() == 'true'
+    print(status)
+    if status:
+        flash('Некорректный URL', 'danger')
+        html_content = render_template('index.html')
+        response = make_response(html_content)
+        response.status_code = 422
+        return response
     try:
         urls_data = get_urls_with_last_check()
         return render_template('urls.html', urls=urls_data)
@@ -59,14 +62,6 @@ def urls():
         print(f"Ошибка при подключении к базе данных: {e}")
         flash('Произошла ошибка при подключении к базе данных', 'danger')
         return redirect(url_for('index'))
-
-@app.route('/urls', methods=['GET'])
-def urls_error():
-    flash('Некорректный URL', 'danger')
-    html_content = render_template('index.html')
-    response = make_response(html_content)
-    response.status_code = 422
-    return response
 
 
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
