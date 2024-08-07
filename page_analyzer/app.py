@@ -22,8 +22,7 @@ def process_url(url):
             flash('Страница уже существует', 'info')
             return redirect(url_for('urls_id', url_id=url_id))
     else:
-        session['invalid_url'] = url
-        return redirect(url_for('urls'))
+        return redirect(url_for('urls_error'))
 
 
 @app.route('/', methods=['GET'])
@@ -45,14 +44,16 @@ def index_post():
 
 
 @app.route('/urls', methods=['GET'])
+def urls_error():
+    flash('Некорректный URL', 'danger')
+    html_content = render_template('index.html')
+    response = make_response(html_content)
+    response.status_code = 422
+    return response
+
+
+@app.route('/urls', methods=['GET'])
 def urls():
-    index_url = session.pop('invalid_url', None)
-    if index_url and not validate_url(index_url):
-        flash('Некорректный URL', 'danger')
-        html_content = render_template('index.html')
-        response = make_response(html_content)
-        response.status_code = 422
-        return response
     try:
         urls_data = get_urls_with_last_check()
         return render_template('urls.html', urls=urls_data)
