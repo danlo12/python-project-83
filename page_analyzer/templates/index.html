@@ -11,7 +11,7 @@
                 <h1 class="display-3">Анализатор страниц</h1>
                 <p class="lead">Бесплатно проверяйте сайты на
                     SEO-пригодность</p>
-                <form class="d-flex justify-content-center" action="{{ url_for('index') }}"
+                <form class="d-flex justify-content-center" action="{{ url_for('urls') }}"
                       method="post" required="">
                     <input class="form-control form-control-lg" type="text"
                            name="url"
@@ -24,6 +24,6 @@
                 </form>
             </div>
         </div>
-    </div>
+</div>
 </main>
 {% endblock content%}

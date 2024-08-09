@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, make_response, g
+from flask import Flask, request, render_template, redirect, url_for, flash, make_response
 from datetime import datetime
 from validators import url as validate_url
 from .database_utils import add_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
@@ -17,7 +17,7 @@ def index():
         return render_template('index.html')
 
 
-@app.route('/', methods=['POST'])
+@app.route('/urls', methods=['POST'])
 def submit_url():
     url = request.form['url']
     try:
@@ -31,7 +31,8 @@ def submit_url():
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
-            return redirect(url_for('urls', error=True))
+            flash('Некорректный URL', 'danger')
+            return render_template('index.html'), 422
     except Exception as e:
         print(f"Ошибка при обработке URL: {e}")
         flash('Произошла ошибка при обработке URL', 'danger')
@@ -42,13 +43,6 @@ def submit_url():
 
 @app.route('/urls', methods=['GET'])
 def urls():
-    error = request.args.get('error')
-    if error:
-        flash('Некорректный URL', 'danger')
-        html_content = render_template('index.html')
-        response = make_response(html_content)
-        response.status_code = 422
-        return response
     try:
         urls_data = get_urls_with_last_check()
         return render_template('urls.html', urls=urls_data)
