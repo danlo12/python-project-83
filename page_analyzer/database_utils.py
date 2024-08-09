@@ -1,23 +1,15 @@
 from flask import Flask, flash, get_flashed_messages
 import psycopg2
 import os
-from urllib.parse import urlparse
 from contextlib import contextmanager
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import requests
-
-
+from .func import get_base_url
 app = Flask(__name__)
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
-
-
-def get_base_url(url):
-    parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    return base_url
 
 
 @contextmanager
