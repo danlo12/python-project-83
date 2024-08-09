@@ -127,6 +127,7 @@ def get_url_from_db(conn, url_id):
         url_record = cur.fetchone()
         return url_record[0] if url_record else None
 
+
 def check_url(url):
     try:
         response = requests.get(url, timeout=10)
@@ -156,6 +157,7 @@ def save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, descr
     except psycopg2.Error as e:
         print("Ошибка PostgreSQL при сохранении проверки:", e)
         flash('Произошла ошибка при сохранении проверки', 'danger')
+
 
 def perform_url_check_and_save_to_db(url_id, created_at):
     with connect_to_db() as conn:
