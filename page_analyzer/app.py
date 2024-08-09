@@ -11,20 +11,6 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 
 
-def process_url(url):
-    if validate_url(url):
-        if not is_url_in_db(url):
-            url_id = add_url_to_db(url)
-            flash('Страница успешно добавлена', 'success')
-            return redirect(url_for('urls_id', url_id=url_id))
-        else:
-            url_id = add_url_to_db(url)
-            flash('Страница уже существует', 'info')
-            return redirect(url_for('urls_id', url_id=url_id))
-    else:
-        return redirect(url_for('urls', error=True))
-
-
 @app.route('/', methods=['GET'])
 def index():
     if request.method == 'GET':
@@ -32,15 +18,26 @@ def index():
 
 
 @app.route('/', methods=['POST'])
-def index_post():
-    if request.method == 'POST':
-        url = request.form['url']
-        try:
-            return process_url(url)
-        except Exception as e:
-            print(f"Ошибка при обработке URL: {e}")
-            flash('Произошла ошибка при обработке URL', 'danger')
-            return redirect(url_for('index'))
+def submit_url():
+    url = request.form['url']
+    try:
+        if validate_url(url):
+            if not is_url_in_db(url):
+                url_id = add_url_to_db(url)
+                flash('Страница успешно добавлена', 'success')
+                return redirect(url_for('urls_id', url_id=url_id))
+            else:
+                url_id = add_url_to_db(url)
+                flash('Страница уже существует', 'info')
+                return redirect(url_for('urls_id', url_id=url_id))
+        else:
+            return redirect(url_for('urls', error=True))
+    except Exception as e:
+        print(f"Ошибка при обработке URL: {e}")
+        flash('Произошла ошибка при обработке URL', 'danger')
+        response = make_response(render_template('index.html'))
+        response.status_code = 422
+        return response
 
 
 @app.route('/urls', methods=['GET'])
