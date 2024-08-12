@@ -1,6 +1,6 @@
 from flask import flash, get_flashed_messages
-import psycopg2
 from psycopg2 import extras
+import psycopg2
 import os
 from contextlib import contextmanager
 from dotenv import load_dotenv
@@ -22,7 +22,7 @@ def connect_to_db():
 
 
 def get_url_id(conn, base_url):
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=extras.DictCursor) as cur:
         cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
         existing_id = cur.fetchone()
         if existing_id:
