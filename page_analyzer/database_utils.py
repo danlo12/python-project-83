@@ -4,10 +4,9 @@ from psycopg2 import extras
 import os
 from contextlib import contextmanager
 from dotenv import load_dotenv
+from .config import check_url
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
-from .config import check_url
-
 
 
 @contextmanager
