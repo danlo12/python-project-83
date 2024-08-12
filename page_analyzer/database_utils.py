@@ -35,7 +35,9 @@ def create_url(conn, base_url):
         cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
         url_id = cur.fetchone()['id']
         conn.commit()
-        return url_id
+        if url_id:
+            return url_id
+        return None
 
 
 def add_url_to_db(url):
@@ -43,7 +45,6 @@ def add_url_to_db(url):
         url_id = get_url_id(conn, url)
         if url_id is not None:
             return url_id
-
         return create_url(conn, url)
 
 
@@ -51,8 +52,10 @@ def is_url_in_db(url):
     with connect_to_db() as conn:
         cur = conn.cursor(cursor_factory=extras.DictCursor)
         cur.execute("SELECT id FROM urls WHERE name = %s", (url,))
-        existing_id = cur.fetchone()['id']
-        return existing_id is not None
+        existing_id = cur.fetchone()
+        if existing_id:
+            return existing_id
+        return None
 
 
 def get_urls_with_last_check():
@@ -89,7 +92,9 @@ def get_url_from_db(conn, url_id):
     with conn.cursor(cursor_factory=extras.DictCursor) as cur:
         cur.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
         url_record = cur.fetchone()
-        return url_record['name'] if url_record else None
+        if url_record:
+            return url_record['name']
+        return None
 
 
 def save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description):
