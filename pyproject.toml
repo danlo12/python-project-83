@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "hexlet-code"
 version = "0.1.0"
-description = ""
+description = "Page analyzer - analyzes specified pages for SEO-friendliness"
 authors = ["danlo <danlo12@mail.ru>"]
 readme = "README.md"
 

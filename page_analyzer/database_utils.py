@@ -1,15 +1,15 @@
-from flask import Flask, flash, get_flashed_messages
+from flask import flash, get_flashed_messages
 import psycopg2
+from psycopg2 import extras
 import os
 from contextlib import contextmanager
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import requests
-from .func import get_base_url
-app = Flask(__name__)
+from .config import normalize_url
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
-app.secret_key = os.getenv('SECRET_KEY')
+
 
 
 @contextmanager
@@ -25,11 +25,11 @@ def connect_to_db():
 
 
 def get_url_id(conn, base_url):
-    with conn.cursor() as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
         existing_id = cur.fetchone()
         if existing_id:
-            return existing_id[0]
+            return existing_id['id']
         return None
 
 
@@ -51,7 +51,7 @@ def create_url(conn, base_url):
 
 
 def add_url_to_db(url):
-    base_url = get_base_url(url)
+    base_url = normalize_url(url)
     with connect_to_db() as conn:
         url_id = get_url_id(conn, base_url)
         if url_id is not None:
@@ -61,7 +61,7 @@ def add_url_to_db(url):
 
 
 def is_url_in_db(url):
-    base_url = get_base_url(url)
+    base_url = normalize_url(url)
     with connect_to_db() as conn:
         cur = conn.cursor()
         cur.execute("SELECT id FROM urls WHERE name = %s", (base_url,))
