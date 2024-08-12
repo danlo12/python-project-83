@@ -31,9 +31,9 @@ def get_url_id(conn, base_url):
 
 
 def create_url(conn, base_url):
-    with conn.cursor() as cur:
+    with conn.cursor(cursor_factory=extras.DictCursor) as cur:
         cur.execute("INSERT INTO urls (name) VALUES (%s) RETURNING id", (base_url,))
-        url_id = cur.fetchone()[0]
+        url_id = cur.fetchone()['id']
         conn.commit()
         return url_id
 
@@ -49,15 +49,15 @@ def add_url_to_db(url):
 
 def is_url_in_db(url):
     with connect_to_db() as conn:
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory=extras.DictCursor)
         cur.execute("SELECT id FROM urls WHERE name = %s", (url,))
-        existing_id = cur.fetchone()
+        existing_id = cur.fetchone()['id']
         return existing_id is not None
 
 
 def get_urls_with_last_check():
     with connect_to_db() as conn:
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory=extras.DictCursor)
         cur.execute("""
                 SELECT urls.id, urls.name, MAX(url_checks.created_at) AS last_check_date,
                 url_checks.status_code
@@ -72,11 +72,7 @@ def get_urls_with_last_check():
 
 def get_url_details(url_id):
     with connect_to_db() as conn:
-        if conn is None:
-            flash('Произошла ошибка при подключении к базе данных', 'danger')
-            raise Exception("Ошибка при подключении к базе данных")
-
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory=extras.DictCursor)
         cur.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
         url = cur.fetchone()
         if url is None:
@@ -90,14 +86,14 @@ def get_url_details(url_id):
 
 
 def get_url_from_db(conn, url_id):
-    with conn.cursor() as cur:
+    with conn.cursor(cursor_factory=extras.DictCursor) as cur:
         cur.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
         url_record = cur.fetchone()
-        return url_record[0] if url_record else None
+        return url_record['name'] if url_record else None
 
 
 def save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description):
-    with conn.cursor() as cur:
+    with conn.cursor(cursor_factory=extras.DictCursor) as cur:
         cur.execute(
             "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)",
             (url_id, created_at, status_code, str(h1), str(title), str(description))
