@@ -56,11 +56,11 @@ def urls():
 @app.route('/urls/<int:url_id>', methods=['GET', 'POST'])
 def urls_id(url_id):
     try:
-        url, checks, messages = get_url_details(url_id)
-        return render_template('urls_id.html', url=url, checks=checks, messages=messages)
+        url, checks = get_url_details(url_id)
+        return render_template('urls_id.html', url=url, checks=checks)
     except Exception as e:
-        print(f"Ошибка при подключении к базе данных: {e}")
-        flash('Произошла ошибка при подключении к базе данных', 'danger')
+        print(f"URL не найден: {e}")
+        flash('URL не найден', 'warning')
         return redirect(url_for('index'))
 
 
@@ -72,7 +72,8 @@ def create_check(url_id):
             perform_url_check_and_save_to_db(url_id, created_at)
         except Exception as e:
             print(f"Ошибка при подключении к базе данных: {e}")
-            flash('Произошла ошибка при подключении к базе данных', 'danger')
+            flash('Произошла ошибка при проверке', 'danger')
+        flash('Страница успешно проверена', 'success')
     return redirect(url_for('urls_id', url_id=url_id))
 
 

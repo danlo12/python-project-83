@@ -16,9 +16,6 @@ def connect_to_db():
     conn = psycopg2.connect(DATABASE_URL)
     try:
         yield conn
-    except psycopg2.Error as e:
-        print("Ошибка при подключении к базе данных:", e)
-        yield None
     finally:
         conn.close()
 
@@ -81,13 +78,10 @@ def get_url_details(url_id):
         cur.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
         url = cur.fetchone()
         if url is None:
-            flash('URL не найден', 'warning')
             raise Exception("URL не найден")
-
         cur.execute("SELECT * FROM url_checks WHERE url_id = %s", (url_id,))
         checks = cur.fetchall()
-        messages = get_flashed_messages(with_categories=True)
-        return url, checks, messages
+        return url, checks
 
 
 def get_url_from_db(conn, url_id):
@@ -106,25 +100,14 @@ def save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, descr
             (url_id, created_at, status_code, str(h1), str(title), str(description))
         )
         conn.commit()
-        flash('Страница успешно проверена', 'success')
 
 
 def perform_url_check_and_save_to_db(url_id, created_at):
     with connect_to_db() as conn:
-        if conn is None:
-            flash('Произошла ошибка при подключении к базе данных', 'danger')
-            raise Exception("Произошла ошибка при подключении к базе данных")
         url = get_url_from_db(conn, url_id)
-        if not url:
-            flash('URL не найден', 'warning')
-            return
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            html_content = response.text
-            h1, title, description = parse_html_content(html_content)
-            status_code = response.status_code
-        except requests.RequestException:
-            flash('Произошла ошибка при проверке', 'danger')
-        else:
-            save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description)
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        html_content = response.text
+        h1, title, description = parse_html_content(html_content)
+        status_code = response.status_code
+        save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description)
