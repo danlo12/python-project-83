@@ -1,4 +1,3 @@
-from flask import flash, get_flashed_messages
 from psycopg2 import extras
 import psycopg2
 import os
