@@ -1,7 +1,4 @@
-from dotenv import load_dotenv
 from bs4 import BeautifulSoup
-
-load_dotenv()
 
 
 def parse_html_content(html_content):

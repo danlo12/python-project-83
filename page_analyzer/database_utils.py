@@ -3,7 +3,7 @@ import psycopg2
 import os
 from contextlib import contextmanager
 from dotenv import load_dotenv
-from .config import parse_html_content
+from .html_parser import parse_html_content
 import requests
 
 load_dotenv()
