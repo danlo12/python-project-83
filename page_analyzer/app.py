@@ -4,7 +4,7 @@ from validators import url as validate_url
 from .database_utils import add_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
 import os
 from dotenv import load_dotenv
-from .config import normalize_url
+from .urls import normalize_url
 
 app = Flask(__name__)
 load_dotenv()

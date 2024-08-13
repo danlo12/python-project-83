@@ -4,7 +4,9 @@ import psycopg2
 import os
 from contextlib import contextmanager
 from dotenv import load_dotenv
-from .config import check_url
+from .config import parse_html_content
+import requests
+
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 
@@ -117,8 +119,11 @@ def perform_url_check_and_save_to_db(url_id, created_at):
         if not url:
             flash('URL не найден', 'warning')
             return
-
-        status_code, h1, title, description = check_url(url)
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        html_content = response.text
+        h1, title, description = parse_html_content(html_content)
+        status_code = response.status_code
         if status_code is None:
             flash('Произошла ошибка при проверке', 'danger')
         else:
