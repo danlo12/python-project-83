@@ -20,22 +20,21 @@ def index():
 
 @app.route('/urls', methods=['POST'])
 def submit_url():
-    url = request.form['url']
+    url = normalize_url(request.form['url'])
     try:
         if validate_url(url):
-            if not is_url_in_db(normalize_url(url)):
-                url_id = add_url_to_db(normalize_url(url))
+            if not is_url_in_db(url):
+                url_id = add_url_to_db(url)
                 flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', url_id=url_id))
             else:
-                url_id = add_url_to_db(normalize_url(url))
+                url_id = add_url_to_db(url)
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
             return render_template('index.html'), 422
-    except Exception as e:
-        print(f"Ошибка при обработке URL: {e}")
+    except Exception:
         flash('Произошла ошибка при обработке URL', 'danger')
         response = make_response(render_template('index.html'))
         response.status_code = 422
@@ -47,8 +46,7 @@ def urls():
     try:
         urls_data = get_urls_with_last_check()
         return render_template('urls.html', urls=urls_data)
-    except Exception as e:
-        print(f"Ошибка при подключении к базе данных: {e}")
+    except Exception:
         flash('Произошла ошибка при подключении к базе данных', 'danger')
         return redirect(url_for('index'))
 
@@ -70,8 +68,7 @@ def create_check(url_id):
         created_at = datetime.now()
         try:
             perform_url_check_and_save_to_db(url_id, created_at)
-        except Exception as e:
-            print(f"Ошибка при подключении к базе данных: {e}")
+        except Exception:
             flash('Произошла ошибка при проверке', 'danger')
         flash('Страница успешно проверена', 'success')
     return redirect(url_for('urls_id', url_id=url_id))
