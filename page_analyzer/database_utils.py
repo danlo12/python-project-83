@@ -114,17 +114,17 @@ def perform_url_check_and_save_to_db(url_id, created_at):
         if conn is None:
             flash('Произошла ошибка при подключении к базе данных', 'danger')
             raise Exception("Произошла ошибка при подключении к базе данных")
-
         url = get_url_from_db(conn, url_id)
         if not url:
             flash('URL не найден', 'warning')
             return
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        html_content = response.text
-        h1, title, description = parse_html_content(html_content)
-        status_code = response.status_code
-        if status_code is None:
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            html_content = response.text
+            h1, title, description = parse_html_content(html_content)
+            status_code = response.status_code
+        except requests.RequestException:
             flash('Произошла ошибка при проверке', 'danger')
         else:
             save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description)
