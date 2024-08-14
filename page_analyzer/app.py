@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 from datetime import datetime
 from validators import url as validate_url
-from .database_utils import add_url_to_db, extract_url_id_from_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db, get_url_from_db
+from .database_utils import add_url_to_db, extract_url_id_from_db, get_urls_with_last_check, get_url_details, is_url_in_db, save_url_check_to_db, get_url_from_db
 import os
 from dotenv import load_dotenv
 from .urls import normalize_url
@@ -72,7 +72,7 @@ def create_check(url_id):
         html_content = response.text
         h1, title, description = map(str, parse_html_content(html_content))
         status_code = response.status_code
-        perform_url_check_and_save_to_db(url_id, created_at, status_code, h1, title, description)
+        save_url_check_to_db(url_id, created_at, status_code, h1, title, description)
     except Exception:
         flash('Произошла ошибка при проверке', 'danger')
     flash('Страница успешно проверена', 'success')

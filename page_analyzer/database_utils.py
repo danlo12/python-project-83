@@ -94,15 +94,11 @@ def get_url_from_db(url_id):
         return None
 
 
-def save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description):
-    with conn.cursor(cursor_factory=extras.DictCursor) as cur:
-        cur.execute(
-            "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)",
-            (url_id, created_at, status_code, h1, title, description)
-        )
-        conn.commit()
-
-
-def perform_url_check_and_save_to_db(url_id, created_at, status_code, h1, title, description):
+def save_url_check_to_db(url_id, created_at, status_code, h1, title, description):
     with connect_to_db() as conn:
-        save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description)
+        with conn.cursor(cursor_factory=extras.DictCursor) as cur:
+            cur.execute(
+                "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)",
+                (url_id, created_at, status_code, h1, title, description)
+            )
+            conn.commit()
