@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, make_response
+from flask import Flask, request, render_template, redirect, url_for, flash
 from datetime import datetime
 from validators import url as validate_url
 from .database_utils import add_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
@@ -14,8 +14,7 @@ app.secret_key = os.getenv('SECRET_KEY')
 
 @app.route('/', methods=['GET'])
 def index():
-    if request.method == 'GET':
-        return render_template('index.html')
+    return render_template('index.html')
 
 
 @app.route('/urls', methods=['POST'])
@@ -36,9 +35,7 @@ def submit_url():
             return render_template('index.html'), 422
     except Exception:
         flash('Произошла ошибка при обработке URL', 'danger')
-        response = make_response(render_template('index.html'))
-        response.status_code = 422
-        return response
+        return render_template('index.html'), 422
 
 
 @app.route('/urls', methods=['GET'])
@@ -64,15 +61,15 @@ def urls_id(url_id):
 
 @app.route('/urls/<int:url_id>/checks', methods=['POST'])
 def create_check(url_id):
-    if request.method == 'POST':
-        created_at = datetime.now()
-        try:
-            perform_url_check_and_save_to_db(url_id, created_at)
-        except Exception:
-            flash('Произошла ошибка при проверке', 'danger')
-        flash('Страница успешно проверена', 'success')
+    created_at = datetime.now()
+    try:
+        perform_url_check_and_save_to_db(url_id, created_at)
+    except Exception:
+        flash('Произошла ошибка при проверке', 'danger')
+    flash('Страница успешно проверена', 'success')
     return redirect(url_for('urls_id', url_id=url_id))
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_mode = os.getenv('FLASK_DEBUG')
+    app.run(debug=debug_mode)

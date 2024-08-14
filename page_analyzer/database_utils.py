@@ -40,9 +40,6 @@ def create_url(conn, base_url):
 
 def add_url_to_db(url):
     with connect_to_db() as conn:
-        url_id = get_url_id(conn, url)
-        if url_id is not None:
-            return url_id
         return create_url(conn, url)
 
 
@@ -96,7 +93,7 @@ def save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, descr
     with conn.cursor(cursor_factory=extras.DictCursor) as cur:
         cur.execute(
             "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)",
-            (url_id, created_at, status_code, str(h1), str(title), str(description))
+            (url_id, created_at, status_code, h1, title, description)
         )
         conn.commit()
 
@@ -107,6 +104,6 @@ def perform_url_check_and_save_to_db(url_id, created_at):
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         html_content = response.text
-        h1, title, description = parse_html_content(html_content)
+        h1, title, description = map(str, parse_html_content(html_content))
         status_code = response.status_code
         save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description)
