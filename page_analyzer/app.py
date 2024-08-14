@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 from datetime import datetime
 from validators import url as validate_url
-from .database_utils import add_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
+from .database_utils import add_url_to_db,extract_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
 import os
 from dotenv import load_dotenv
 from .urls import normalize_url
@@ -27,13 +27,14 @@ def submit_url():
                 flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', url_id=url_id))
             else:
-                url_id = add_url_to_db(url)
+                url_id = extract_url_to_db(url)
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
             flash('Некорректный URL', 'danger')
             return render_template('index.html'), 422
-    except Exception:
+    except Exception as e:
+        print(e)
         flash('Произошла ошибка при обработке URL', 'danger')
         return render_template('index.html'), 422
 

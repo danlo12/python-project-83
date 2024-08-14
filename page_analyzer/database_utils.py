@@ -40,9 +40,13 @@ def create_url(conn, base_url):
 
 def add_url_to_db(url):
     with connect_to_db() as conn:
+        return create_url(conn, url)
+
+
+def extract_url_to_db(url):
+    with connect_to_db() as conn:
         url_id = get_url_id(conn, url)
         return url_id
-
 
 def is_url_in_db(url):
     with connect_to_db() as conn:
