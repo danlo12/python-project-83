@@ -3,8 +3,6 @@ import psycopg2
 import os
 from contextlib import contextmanager
 from dotenv import load_dotenv
-from .html_parser import parse_html_content
-import requests
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -43,10 +41,11 @@ def add_url_to_db(url):
         return create_url(conn, url)
 
 
-def extract_url_to_db(url):
+def extract_url_id_from_db(url):
     with connect_to_db() as conn:
         url_id = get_url_id(conn, url)
         return url_id
+
 
 def is_url_in_db(url):
     with connect_to_db() as conn:
@@ -85,12 +84,13 @@ def get_url_details(url_id):
         return url, checks
 
 
-def get_url_from_db(conn, url_id):
-    with conn.cursor(cursor_factory=extras.DictCursor) as cur:
-        cur.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
-        url_record = cur.fetchone()
-        if url_record:
-            return url_record['name']
+def get_url_from_db(url_id):
+    with connect_to_db() as conn:
+        with conn.cursor(cursor_factory=extras.DictCursor) as cur:
+            cur.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
+            url_record = cur.fetchone()
+            if url_record:
+                return url_record['name']
         return None
 
 
@@ -103,12 +103,6 @@ def save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, descr
         conn.commit()
 
 
-def perform_url_check_and_save_to_db(url_id, created_at):
+def perform_url_check_and_save_to_db(url_id, created_at, status_code, h1, title, description):
     with connect_to_db() as conn:
-        url = get_url_from_db(conn, url_id)
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        html_content = response.text
-        h1, title, description = map(str, parse_html_content(html_content))
-        status_code = response.status_code
         save_url_check_to_db(conn, url_id, created_at, status_code, h1, title, description)

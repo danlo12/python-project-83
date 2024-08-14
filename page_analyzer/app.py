@@ -1,10 +1,12 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 from datetime import datetime
 from validators import url as validate_url
-from .database_utils import add_url_to_db,extract_url_to_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db
+from .database_utils import add_url_to_db, extract_url_id_from_db, get_urls_with_last_check, get_url_details, is_url_in_db, perform_url_check_and_save_to_db, get_url_from_db
 import os
 from dotenv import load_dotenv
 from .urls import normalize_url
+import requests
+from .html_parser import parse_html_content
 
 app = Flask(__name__)
 load_dotenv()
@@ -27,7 +29,7 @@ def submit_url():
                 flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', url_id=url_id))
             else:
-                url_id = extract_url_to_db(url)
+                url_id = extract_url_id_from_db(url)
                 flash('Страница уже существует', 'info')
                 return redirect(url_for('urls_id', url_id=url_id))
         else:
@@ -64,7 +66,13 @@ def urls_id(url_id):
 def create_check(url_id):
     created_at = datetime.now()
     try:
-        perform_url_check_and_save_to_db(url_id, created_at)
+        url = get_url_from_db(url_id)
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        html_content = response.text
+        h1, title, description = map(str, parse_html_content(html_content))
+        status_code = response.status_code
+        perform_url_check_and_save_to_db(url_id, created_at, status_code, h1, title, description)
     except Exception:
         flash('Произошла ошибка при проверке', 'danger')
     flash('Страница успешно проверена', 'success')
