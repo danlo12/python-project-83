@@ -71,5 +71,4 @@ def create_check(url_id):
 
 
 if __name__ == '__main__':
-    debug_mode = os.getenv('FLASK_DEBUG')
-    app.run(debug=debug_mode)
+    app.run(debug=True)
