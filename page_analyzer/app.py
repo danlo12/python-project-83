@@ -35,8 +35,7 @@ def submit_url():
         else:
             flash('Некорректный URL', 'danger')
             return render_template('index.html'), 422
-    except Exception as e:
-        print(e)
+    except Exception:
         flash('Произошла ошибка при обработке URL', 'danger')
         return render_template('index.html'), 422
 
@@ -46,7 +45,7 @@ def urls():
     try:
         urls_data = get_urls_with_last_check()
         return render_template('urls.html', urls=urls_data)
-    except Exception:
+    except ConnectionError:
         flash('Произошла ошибка при подключении к базе данных', 'danger')
         return redirect(url_for('index'))
 
@@ -56,8 +55,7 @@ def urls_id(url_id):
     try:
         url, checks = get_url_details(url_id)
         return render_template('urls_id.html', url=url, checks=checks)
-    except Exception as e:
-        print(f"URL не найден: {e}")
+    except Exception:
         flash('URL не найден', 'warning')
         return redirect(url_for('index'))
 
@@ -80,4 +78,5 @@ def create_check(url_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_mode = os.getenv('FLASK_DEBUG')
+    app.run(debug=debug_mode)

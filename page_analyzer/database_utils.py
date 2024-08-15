@@ -61,7 +61,7 @@ def get_urls_with_last_check():
     with connect_to_db() as conn:
         cur = conn.cursor(cursor_factory=extras.DictCursor)
         cur.execute("""
-                SELECT urls.id, urls.name, MAX(url_checks.created_at) AS last_check_date,
+            SELECT urls.id, urls.name, MAX(url_checks.created_at) AS last_check_date,
                 url_checks.status_code
                 FROM urls
                 LEFT JOIN url_checks ON urls.id = url_checks.url_id
@@ -98,7 +98,9 @@ def save_url_check_to_db(url_id, created_at, status_code, h1, title, description
     with connect_to_db() as conn:
         with conn.cursor(cursor_factory=extras.DictCursor) as cur:
             cur.execute(
-                "INSERT INTO url_checks (url_id, created_at, status_code, h1, title, description) VALUES (%s, %s, %s, %s, %s, %s)",
+                "INSERT INTO url_checks "
+                "(url_id, created_at, status_code, h1, title, description) "
+                "VALUES (%s, %s, %s, %s, %s, %s)",
                 (url_id, created_at, status_code, h1, title, description)
             )
             conn.commit()

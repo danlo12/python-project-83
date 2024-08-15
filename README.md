@@ -52,13 +52,12 @@ The project aims to develop the following skills:
 
 4. Install the dependencies:
     ```bash
-    pip install -r requirements.txt
+    curl -sSL https://install.python-poetry.org | python3 -
+    make install
     ```
 
-5. Set up environment variables for database connection. Create a `.env` file in the project root and add the following line:
-    ```
-    DATABASE_URL=your_database_url
-    ```
+5.  Set up environment variables for database connection. Create a .env file in the root directory of the project and add the variables from the .env.sample file.
+
 
 6. Run the application:
     ```bash
@@ -116,17 +115,18 @@ The project aims to develop the following skills:
 
 4. Установите зависимости:
     ```bash
-    pip install -r requirements.txt
+    curl -sSL https://install.python-poetry.org | python3 -
+    make install
     ```
 
-5. Настройте переменные окружения для подключения к базе данных. Создайте файл `.env` в корне проекта и добавьте следующую строку:
+5. Настройте переменные окружения для подключения к базе данных. Создайте файл `.env` в корне проекта и добавьте переменные из файла `.env.sample`:
     ```
     DATABASE_URL=your_database_url
     ```
 
 6. Запустите приложение:
     ```bash
-    flask run
+    make start
     ```
 
-7. Откройте браузер и перейдите по адресу [http://127.0.0.1:5000](http://127.0.0.1:5000), чтобы увидеть приложение.
+7. Откройте браузер и перейдите по адресу [http://http://0.0.0.0:8000](http://0.0.0.0:8000), чтобы увидеть приложение.
